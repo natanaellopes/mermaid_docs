@@ -1,0 +1,59 @@
+---
+title: Wallet user persisted flow
+---
+sequenceDiagram
+    autonumber
+    Actor Customer
+    participant Checkout
+    participant Wallet
+    participant WalletIframe
+    participant WalletAPI
+
+    Customer->>Checkout: Access /start
+    Checkout->>Wallet: Load Wallet App
+
+    alt Cross Store enabled
+        Wallet->>Checkout: Load Wallet Iframe
+
+        alt Load Failure
+            Wallet->>Checkout: Remove iframe
+            Wallet->>Wallet: Show OTP 
+
+        else Load Success
+
+            WalletIframe-)+Wallet: Send READY Message
+            Wallet->>WalletIframe: Send INITIALIZE with initial data
+            Wallet->>-WalletIframe: Request LOGGED_USER
+            WalletIframe-)Wallet: Message with logged User
+        
+            alt Has Logged User
+                Wallet->>Checkout: Create Wallet Authenticated Cookie
+                Wallet->>Checkout: Fill data form
+                Wallet->>Checkout: Redirect to Payment
+
+            else No Logged User
+                Wallet->>Checkout: Clear auth data
+            
+            end
+        
+        end
+    else Cross Store disabled
+        Wallet->>+Checkout: Verify cookie Wallet-Authenticated
+        Checkout->>-Wallet: Wallet-Authenticated value
+
+        alt Has Wallet-Authenticated
+
+            critical Verify logged User
+                Wallet->>WalletAPI: Make request to /user/authenticated
+            option Return error
+                Wallet->>Checkout: Clear auth data
+            option Return Successful
+                WalletAPI->>Wallet: Returns logged User
+                Wallet->>Checkout: Create Wallet Authenticated Cookie
+                Wallet->>Checkout: Fill data form
+                Wallet->>Checkout: Redirect to Payment
+            end
+
+        end
+    end
+    
