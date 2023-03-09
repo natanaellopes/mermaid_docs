@@ -1,0 +1,36 @@
+flowchart TD
+    A([START]) --> B(Customer access /start)
+    B --> C(Load Wallet App)
+    C --> D{Cross Store Enabled}
+    D -->|YES| E(Inject Wallet Iframe)
+    D -->|NO| F{Same Store authenticated}
+    E --> G{Wallet Iframe loaded?}
+    G --> |NO| H(Remove iframe)
+    H --> OTP(Show OTP)
+    G -.-> |YES| I(Wallet Iframe sends READY message)
+    I --> J(Wallet App sends LOGGED_USER message to Iframe)
+    J --> K(Responds with user logged)
+    K --> L{Has user data?}
+    L --> |NO| M(Clear auth data persisted)
+    M --> N(Enable verify email flow)
+    L --> |SIM| O(Create cookie with Wallet Authenticated flag)
+    O --> P(Fill Form With Data)
+    P --> Q(Redirect tot Payment Page)
+    Q --> Finish([Finish])
+    F --> |NO| N
+    F --> |YES| R(Request to /user/authenticated)
+    R --> S{Verify compatilibility cookie and email}
+    S --> |VALID| T(Return user authenticated data)
+    T --> P
+    S --> |INVALID| U(Return error)
+    U --> M
+    M --> V(Customer fill email)
+    V --> W{User has been registered?}
+    W --> |NO| X(Enable Smart Sign In)
+    X --> Finish 
+    W --> |YES| OTP
+    OTP --> Z(OTP verified)
+    Z --> O
+
+
+    
